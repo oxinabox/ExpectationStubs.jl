@@ -1,6 +1,6 @@
-using ExpectionTestingMocks
+using ExpectationStubs
 
-using ExpectionTestingMocks: DoNotCare, split_vals_and_sig, ExpectationValueMismatchError, ExpectationAlreadySetError
+using ExpectationStubs: DoNotCare, split_vals_and_sig, ExpectationValueMismatchError, ExpectationAlreadySetError
 using Base.Test
 
 
@@ -12,6 +12,13 @@ using Base.Test
     @test_throws ExpectationAlreadySetError @expect(foo(::Any)=34)
 end
 
+@testset "multitype stubbing" begin
+    @stub foo
+    @expect(foo(::Int)=20)
+    @expect(foo(::Bool)=39)
+    @test_broken foo(3)==20
+    @test foo(false)==39
+end
 
 @testset "mulitple basic keyed stubs" begin
     @stub foo
