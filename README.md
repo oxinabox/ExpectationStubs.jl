@@ -10,7 +10,7 @@ This package exists to help you make testing stubs.
 Its not to help you do patch mocks into code:
 for that see [Mocking.jl](https://github.com/invenia/Mocking.jl).
 
-In theory the stubs created using ExpectionTestingMocks
+In theory the stubs created using ExpectationStubs
 are ideal for patching in with Mocking.jl.
 This is still in alpha, and that hasn't been tested yet.
 (Raise an issue and let me know if that works.)
