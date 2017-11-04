@@ -1,5 +1,8 @@
 # ExpectationStubs
 [![Build Status](https://travis-ci.org/oxinabox/ExpectationStubs.jl.svg?branch=master)](https://travis-ci.org/oxinabox/ExpectationStubs.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/46sjp95g6xy9wwt1/branch/master?svg=true)](https://ci.appveyor.com/project/oxinabox/expectationstubs-jl/branch/master)
+
+
 
 
 
