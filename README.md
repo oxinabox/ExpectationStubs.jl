@@ -1,4 +1,7 @@
 # ExpectationStubs
+[![Build Status](https://travis-ci.org/oxinabox/ExpectationStubs.jl.svg?branch=master)](https://travis-ci.org/oxinabox/ExpectationStubs.jl)
+
+
 
 This package exists to help you make testing stubs.
 Its not to help you do patch mocks into code:
