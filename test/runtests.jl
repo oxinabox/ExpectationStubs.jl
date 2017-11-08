@@ -32,8 +32,8 @@ end
     @stub foo
     @expect(foo(4, ::Int)=32)
     @test foo(4,3)==32
-    @test_throws ExpectationValueMismatchError foo(5,3)==32
-    @test_throws MethodError foo(3,2.0)==32
+    @test_throws ExpectationValueMismatchError foo(5, 3)==32
+    @test_throws ExpectationValueMismatchError foo(3, 2.0)==32
 end
 
 #BROKEN as Mixed keys stubs not currenty allowed.
