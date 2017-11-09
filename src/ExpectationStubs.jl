@@ -7,32 +7,15 @@ export @stub, @expect, Stub, SortedDict, all_expectations_used, @used
 struct SyntaxError <: Exception
 end
 
-#= Currently just throwing a MethodError
-"""
-   ExpectationSignatureMismatchError
-
-Similar to a julia MethodError
-This is thrown if a call was made on a stub,
-that does not have a method for this signature.
-
-
-"""
-struct ExpectationSignatureMismatchError <: Exception
-    name
-    sig
-end
-=#
-
 """
    ExpectationValueMismatchError
 
 Similar to a julia MethodError
 This is thrown if a call was made on a stub,
-but the values did not match those that were expected.
+but the values/types did not match those that were expected.
 """
 struct ExpectationValueMismatchError <: Exception
     name
-    sig
     argvals
 end
 
@@ -43,15 +26,32 @@ struct ExpectationAlreadySetError <:Exception
     argvals
 end
 
+###########################################################
+
 struct Stub{name}
-    expectations::SortedDict
+    expectations::SortedDict{Any, Any}
     expectation_callcounts::SortedDict{Any, Int}
 end
-Stub(name)=Stub{name}(SortedDict(), SortedDict{Any, Int}())
+Stub(name)=Stub{name}(SortedDict{Any, Any}(), SortedDict{Any, Int}())
 
-#function(::Stub{name})(args...) where {name}
-#    ExpectationSignatureMismatchError(name, Tuple(typeof.(args)))
-#end
+
+function(stub::Stub{name})(args...) where {name}
+    if !haskey(stub.expectations, args)
+        throw(ExpectationValueMismatchError(name, args))
+    end
+
+    if haskey(stub.expectation_callcounts, args)
+        stub.expectation_callcounts[args] += 1
+    else
+        # The key that belonged to this initially has a DoNotCare and was replaced by a real count
+        # So need to make new one
+        stub.expectation_callcounts[args] = 1
+    end
+
+    stub.expectations[args]
+end
+
+
 
 """
     @stub(name)
@@ -145,27 +145,6 @@ function split_vals_and_sig(argsexpr)
     vals, sig
 end
 
-"""
-    format_sig(sig)
-
-takes a signature of symbols/exprs
-and return a tuple full function signature, and corresponding tuple of args
-
-Internal use.
-"""
-function format_sig(sig)
-    full_sig = Expr(:tuple)
-    args = Expr(:tuple)
-
-    for (ii, term) in enumerate(sig.args)
-        var = Symbol(:x, ii)
-        push!(args.args, var)
-        push!(full_sig.args, :($var::$term))
-    end
-
-    full_sig, args
-end
-
 
 
 """
@@ -194,29 +173,7 @@ Currently does not support KWArgs.
 macro expect(defn)
     @capture(defn, name_(args__)=ret_) || throw(SyntaxError())
     argvals, sig = split_vals_and_sig(args)
-    formatted_sig, formatted_args = format_sig(sig)
     quote
-
-        #################
-        # setup the method on the stub
-        if !method_exists($(esc(name)), ($(esc(sig))))
-            function (stub::Stub{$(QuoteNode(name))})($(esc.((formatted_sig).args)...))
-                sigkey = $(esc(sig))
-                argkey = $(esc(formatted_args))
-                if !haskey(stub.expectations, argkey)
-                    throw(ExpectationValueMismatchError($(QuoteNode(name)), sigkey, argkey))
-                end
-                if haskey(stub.expectation_callcounts, argkey)
-                    stub.expectation_callcounts[argkey] += 1
-                else
-                    # The key that belonged to this initially has a DoNotCare and was replaced by a real count
-                    # So need to make new one
-                    stub.expectation_callcounts[argkey] = 1
-                end
-
-                stub.expectations[argkey]
-            end
-        end
         ###########################################################
         # Check not allready regeistered
         if haskey($(esc(name)).expectations, $(argvals))
