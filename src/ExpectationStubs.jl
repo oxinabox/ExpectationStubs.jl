@@ -139,7 +139,7 @@ function split_vals_and_sig(argsexpr)
             push!(vals.args, v)
             push!(sig.args, :(typeof($(onlyesc(v)))))
         else
-            throw(SyntaxError)()
+            throw(SyntaxError())
         end
     end
     vals, sig
