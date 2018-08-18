@@ -45,12 +45,26 @@ end
 end
 
 @testset "All expectations used" begin
-    @stub foo
-    @expect(foo(1)=30)
-    @expect(foo(2)=35)
+   @testset "value" begin 
+        @stub foo
+        @expect(foo(1)=30)
+        @expect(foo(2)=35)
 
-    @test foo(1) == 30
-    @test !all_expectations_used(foo)
+        foo(1)
+        @test !all_expectations_used(foo)
+        
+        foo(2)
+        @test all_expectations_used(foo)
+    end
+    @testset "typed" begin 
+        @stub foo
+        @expect(foo(::Int)=30)
+
+        @test !all_expectations_used(foo)
+        foo(2)
+        @test all_expectations_used(foo)
+    end
+
 end
 
 @testset "Expectations use count" begin
