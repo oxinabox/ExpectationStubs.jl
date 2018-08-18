@@ -28,7 +28,7 @@ end
 
 ###########################################################
 
-struct Stub{name}
+struct Stub{name} <: Function
     expectations::SortedDict{Any, Any}
     expectation_callcounts::SortedDict{Any, Int}
 end
