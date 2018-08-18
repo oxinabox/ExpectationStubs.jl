@@ -20,11 +20,12 @@ These stub are ideal for if you already have dependency injection of functions s
 For purposes of this package, a stub and a mock at the same thing.
 
 
-There are 4 key functions (check their docstrings on the REPL).
+There are 5 key functions (check their docstrings on the REPL).
 
  - `@stub foo`: declares a stub called `foo`
  - `@expect foo(::Integer, 8.5)=77`: sets up an expectation that `foo` will be called with an `Integer` and the exact value `8.5`. and if so it is to return `77`
  - `@used  foo(100, ::Real)` checks to see if `foo` was called with the the exact value `100` and something of type `Real`
+ - `@countuse foo(100, ::Real)` as per `@used` except returns the number of times called
  - `all_expectations_used(foo)` checks that every expectation declared on `foo` was used (returns a `Bool`).
 
 ### Example Usage
