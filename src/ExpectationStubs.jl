@@ -1,8 +1,9 @@
 module ExpectationStubs
-using DataStructures
 using MacroTools
-export @stub, @expect, Stub, SortedDict, all_expectations_used, @used
+export @stub, @expect, Stub, all_expectations_used, @used, @usecount
 
+include("donotcare.jl")
+include("vectordict.jl")
 
 struct SyntaxError <: Exception
 end
@@ -26,32 +27,39 @@ struct ExpectationAlreadySetError <:Exception
     argvals
 end
 
-###########################################################
+#########################################################
+
 
 struct Stub{name} <: Function
-    expectations::SortedDict{Any, Any}
-    expectation_callcounts::SortedDict{Any, Int}
+    expectations::VectorDict{Any, Any}
+    calls::Vector{Any}
 end
-Stub(name)=Stub{name}(SortedDict{Any, Any}(), SortedDict{Any, Int}())
+Stub(name)=Stub{name}(VectorDict{Any, Any}(), Vector{Any}())
 
 
 function(stub::Stub{name})(args...) where {name}
     if !haskey(stub.expectations, args)
         throw(ExpectationValueMismatchError(name, args))
     end
-
-    if haskey(stub.expectation_callcounts, args)
-        stub.expectation_callcounts[args] += 1
-    else
-        # The key that belonged to this initially has a DoNotCare and was replaced by a real count
-        # So need to make new one
-        stub.expectation_callcounts[args] = 1
-    end
+    push!(stub.calls, args)
 
     stub.expectations[args]
 end
 
+"""
+    usecount(stub:Stub, arg)
 
+Returns how many times the `stub` has been called with a matching argument
+"""
+function usecount(stub::Stub, arg)
+    net = 0
+    for call_record in stub.calls
+        if call_record == arg
+            net+=1
+        end
+    end
+    net
+end
 
 """
     @stub(name)
@@ -73,34 +81,6 @@ macro stub(name)
         $(esc(name))=Stub($(QuoteNode(name)))
     end
 end
-
-"""
-    DoNotCare{T}
-
-A type that is equal to all things that are of type <:T.
-For internal use.
-Will interact weirdly with hash based dicts
-"""
-struct DoNotCare{T}
-end
-
-function Base.isequal(::DoNotCare{T}, ::A) where {T,A}
-    A <: T
-end
-
-function Base.isequal(::DoNotCare{T1}, ::DoNotCare{T2}) where {T1,T2}
-    T1 == T2
-end
-
-
-Base.isequal(a, d::DoNotCare)=isequal(d,a)
-Base.:(==)(a, d::DoNotCare)=isequal(d,a)
-Base.:(==)(d::DoNotCare, a)=isequal(d,a)
-Base.:(==)(d::DoNotCare, a::DoNotCare)=isequal(d,a)
-
-Base.isless(a, d::DoNotCare)=false
-Base.isless(d::DoNotCare, a)=false
-Base.isless(d::DoNotCare, a::DoNotCare)=false
 
 """
     onlyesc(v)
@@ -181,14 +161,6 @@ macro expect(defn)
         end
 
 
-        ###########################################################
-        # setup call counting
-        $(esc(name)).expectation_callcounts[$(argvals)] = 0
-            # There is initially a count for the argvals, which may include DoNotCare
-            # So we can check if they were called
-            # But that one could get overwritten
-
-        ############################################################
         # actually register the value
         $(esc(name)).expectations[$(argvals)] = $(esc(ret))
     end |> unblock |>  MacroTools.striplines
@@ -201,12 +173,12 @@ Checks that every expectation setup for the stub was actually used.
 It is good to have this as a sanity check at the end of your test script using the stub.
 """
 function all_expectations_used(stub::Stub)
-    all(collect(values(stub.expectation_callcounts)) .> 0)
+    all(usecount.(Ref(stub), values(stub.expectations)) .> 0)
 end
 
 
 """
-    expect(defn)
+    @used(defn)
 
 Returns true if a particular expectionation was used.
 Syntax is similar to `@expect`
@@ -223,11 +195,33 @@ Normally one would used this inside a test:
 - `@test !@used(foo(Any, ::Any))` test tjat `foo` was never alled with 2 args
 """
 macro used(defn)
+    name, argvals, sig = name_argvals_and_sig(defn)
+    :(usecount($(esc(name)), $(argvals)) > 0)
+end
+
+"""
+    @usecount(defn)
+
+Like `@used` but returns the count of how many times the particular expectation 
+was called.
+
+Syntax is the same.
+"""
+macro usecount(defn)
+    name, argvals, sig = name_argvals_and_sig(defn)
+   :(usecount($(esc(name)), $(argvals)))
+end
+
+
+"""
+    name_argvals_and_sig(defn)
+Does the extraction of these as is needed for `@used` and `@usedcounts`
+"""
+function name_argvals_and_sig(defn)
     @capture(defn, name_(args__)) || throw(SyntaxError())
     argvals, sig = split_vals_and_sig(args)
-    quote
-        get($(esc(name)).expectation_callcounts, $(argvals), 0) > 0
-    end |> unblock |>  MacroTools.striplines
+    name, argvals, sig
 end
+
 
 end #Module

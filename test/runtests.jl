@@ -1,7 +1,6 @@
 using ExpectationStubs
-
-using ExpectationStubs: DoNotCare, split_vals_and_sig, ExpectationValueMismatchError, ExpectationAlreadySetError
-using Base.Test
+using ExpectationStubs: ExpectationValueMismatchError, ExpectationAlreadySetError
+using Test
 
 
 @testset "basic stubbing" begin
@@ -16,7 +15,7 @@ end
     @stub foo
     @expect(foo(::Int)=20)
     @expect(foo(::Bool)=39)
-    @test_broken foo(3)==20
+    @test foo(3)==20
     @test foo(false)==39
 end
 
@@ -36,8 +35,6 @@ end
     @test_throws ExpectationValueMismatchError foo(3, 2.0)==32
 end
 
-#BROKEN as Mixed keys stubs not currenty allowed.
-#can not give a value sometimes but not others
 @testset "mixed keyed stubs" begin
     @stub foo
     @expect(foo(1)=30)
@@ -55,6 +52,31 @@ end
     @test foo(1) == 30
     @test !all_expectations_used(foo)
 end
+
+@testset "Expectations use count" begin
+
+    @testset "basic" begin
+        @stub foo
+        @expect(foo(1)=30)
+        @expect(foo(2)=35)
+        @expect(foo(3)=40)
+
+        @test @usecount(foo(1)) == 0
+        foo(1)
+        @test @usecount(foo(1)) == 1
+        @test @usecount(foo(2)) == 0
+        foo(1)
+        
+        @test @usecount(foo(1)) == 2
+
+        @testset "total" begin
+            foo(3)
+            @test @usecount(foo(::Any)) == 3
+            @test @usecount(foo(::Int)) == 3
+        end
+    end
+end
+
 
 @testset "Expectations used" begin
 
@@ -78,18 +100,10 @@ end
         @test !@used(foo(2))
         @test !@used(foo(::Bool))
     end
-
 end
 
 
-@testset "DoNotCare is equal to everything" begin
-    @test DoNotCare{Int}()==4
-    @test 5==DoNotCare{Integer}()
-    @test 5==DoNotCare{Any}()
-    @test !(5===DoNotCare{Any}())
 
-    @test 5!=DoNotCare{String}()
 
-    @test (Any, DoNotCare{Any}()) === (Any,DoNotCare{Any}())
-    @test !((Any, 1) === (Any,DoNotCare{Int}()))
-end
+########################################
+include("donotcare.jl")
