@@ -110,13 +110,13 @@ function split_vals_and_sig(argsexpr)
     sig=Expr(:tuple)
     for term in argsexpr
         if @capture(term, v_::s_)
-            push!(vals.args, v)
+            push!(vals.args, onlyesc(v))
             push!(sig.args, s)
         elseif @capture(term, ::s_)
             push!(vals.args, :(DoNotCare{$(esc(s))}()))
             push!(sig.args, s)
         elseif @capture(term, v_)
-            push!(vals.args, v)
+            push!(vals.args, onlyesc(v))
             push!(sig.args, :(typeof($(onlyesc(v)))))
         else
             throw(SyntaxError())
@@ -155,9 +155,9 @@ macro expect(defn)
     argvals, sig = split_vals_and_sig(args)
     quote
         ###########################################################
-        # Check not allready regeistered
+        # Check not already regeistered
         if haskey($(esc(name)).expectations, $(argvals))
-            throw(ExpectationAlreadySetError($(esc(name)), $(esc(sig)), $(argvals)))
+            throw(ExpectationAlreadySetError($(esc(name)), $(sig), $(argvals)))
         end
 
 
