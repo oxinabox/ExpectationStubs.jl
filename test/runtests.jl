@@ -114,6 +114,17 @@ end
         @test !@used(foo(2))
         @test !@used(foo(::Bool))
     end
+
+    @testset "using a variable as the value #11" begin
+        @stub bar
+
+        b = 11
+        @expect bar(b)=51
+
+        @test bar(b) == 51
+        @test @used bar(11)
+        @test @used bar(b)
+    end
 end
 
 
