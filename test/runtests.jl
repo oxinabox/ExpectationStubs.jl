@@ -1,14 +1,16 @@
 using ExpectationStubs
-using ExpectationStubs: ExpectationValueMismatchError, ExpectationAlreadySetError
+using ExpectationStubs: ExpectationValueMismatchError
 using Test
-
+using Test: @test_logs
 
 @testset "basic stubbing" begin
     @stub foo
     @expect(foo(::Any)=32)
     @test foo(3)==32
     @test foo(4)==32
-    @test_throws ExpectationAlreadySetError @expect(foo(::Any)=34)
+
+    @test_logs (:warn, "Expectation already set") @expect(foo(::Any)=34)
+    @test foo(5)==34
 end
 
 @testset "multitype stubbing" begin
