@@ -10,6 +10,7 @@ using Test: @test_logs
     @test foo(4)==32
 
     @test_logs (:warn, "Expectation already set") @expect(foo(::Any)=34)
+    @test foo(5)==34
 end
 
 @testset "multitype stubbing" begin
