@@ -21,11 +21,6 @@ struct ExpectationValueMismatchError <: Exception
 end
 
 
-struct ExpectationAlreadySetError <:Exception
-    name
-    sig
-    argvals
-end
 
 #########################################################
 
@@ -157,7 +152,7 @@ macro expect(defn)
         ###########################################################
         # Check not allready regeistered
         if haskey($(esc(name)).expectations, $(argvals))
-            throw(ExpectationAlreadySetError($(esc(name)), $(esc(sig)), $(argvals)))
+            @warn "Expectation already set" name=$(Meta.quot(name)) argvals=$(argvals) sig=$(esc(sig))
         end
 
 
