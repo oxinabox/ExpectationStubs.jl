@@ -9,15 +9,15 @@
 This package exists to help you make testing stubs.
 Its not to help you do patch mocks into code:
 for that see [Mocking.jl](https://github.com/invenia/Mocking.jl).
-
-In theory the stubs created using ExpectationStubs
-are ideal for patching in with Mocking.jl.
-This is still in alpha, and that hasn't been tested yet.
-(Raise an issue and let me know if that works.)
+The stubs created using ExpectationStubs are suitable for patching in with Mocking.jl.
 
 These stub are ideal for if you already have dependency injection of functions set up.
 
-For purposes of this package, a stub and a mock at the same thing.
+We consider for the purpose of this package a `stub` to be a simplified function that returns a fixed value for a fixed input.
+Expectation Stups is all about the Arrange, Act, Assert style of unit testiong:
+ - Arrange:  setup _expectatations_ of how the stubbed out code it will be called, and what it should return
+ - Act: call the function being tested (which will then hit the stubbed out methods)
+ - Assert: test that the stubs were tiggered in the way you expected, thus validating your belief about how things are used.
 
 
 There are 5 key functions (check their docstrings on the REPL).
